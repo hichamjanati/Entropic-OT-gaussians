@@ -50,7 +50,7 @@ def sinkhorn_log(C, epsilon, gamma=None, mass_a=1., mass_b=1.,
         loss = (u.mean() + v.mean()) * epsilon
     if return_plan:
         return loss.item(), plan.numpy()
-    return loss.item(), u, v
+    return loss.item()
 
 
 def sinkhorn_exp(C, epsilon, gamma=None, mass_a=1, mass_b=1, maxiter=5000,
@@ -103,4 +103,19 @@ def sinkhorn_exp(C, epsilon, gamma=None, mass_a=1, mass_b=1, maxiter=5000,
         loss += epsilon * (mass_a * mass_b - plan_mass)
     if return_plan:
         return loss.item(), plan.numpy()
-    return loss.item(), u, v
+    return loss.item()
+
+
+def sinkhorn_barycenter(samples, epsilon, maxiter=500, tol=1e-5):
+    """Compute the Wasserstein divergence barycenter between histograms.
+    """
+    n_measures, n_samples, dim = samples.shape
+    q = torch.ones(n_samples) / n_samples
+    b = torch.ones(())
+    for ii in range(maxiter):
+        qold = q.clone()
+        q, b = _barycenter_inner_1d(P, K, qold=q, bold=b)
+        err = abs(q - qold).max()
+        if err < tol:
+            break
+    return q
